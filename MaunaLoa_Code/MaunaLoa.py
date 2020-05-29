@@ -177,7 +177,6 @@ plt.loglog(freq,fourier_amp_detrend,color='magenta')
 plt.ylim(0.4,751)
 plt.plot(freq,yy_fourier_amp,color='purple')
 
-
 freq_nyquist=pi/delt
 freq_T=2.*pi/(nn*delt) 
 plt.plot([freq_nyquist,freq_nyquist],[0.4,750],'--k')

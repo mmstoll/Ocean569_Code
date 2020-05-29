@@ -15,7 +15,7 @@ def import_data(file_name):
     data_netcdf.close()
     return data
 #
-path_in = '/Users/MMStoll/Documents/Python/Data/Ocean569/MaunaLoa/MaunaLoa.nc'
+path_in = '/Users/MMStoll/Python/Data/Ocean569_Data/MaunaLoa_Data/MaunaLoa.nc'
 ML_data = import_data(path_in)
 #
 nn=len(ML_data['T'])
@@ -95,3 +95,9 @@ period_semi_ann=6
 freq_semi_ann=2.*pi/period_semi_ann
 plt.text(freq_semi_ann,12,'semi-annual',color='blue')
 plt.show()
+
+
+
+
+
+
