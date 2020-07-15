@@ -21,7 +21,7 @@ temp_data = pd.read_csv('/Users/MMStoll/Python/Data/Ocean569_Data/SIO_Data/SIO_T
 ENSO_data = pd.read_excel('/Users/MMStoll/Python/Data/Ocean569_Data/SIO_Data/NOAA_ENSO_data.xlsx')
 ENSO_data_recent = pd.read_excel('/Users/MMStoll/Python/Data/Ocean569_Data/SIO_Data/NOAA_ENSO_recent_data.xlsx')
 precip_data = pd.read_csv('/Users/MMStoll/Python/Data/Ocean569_Data/SIO_Data/NOAA_Precip_data.csv')
-# path_out = '/Users/MMStoll/Python/Output/Ocean569_Output/SIO_Output/'
+path_out = '/Users/MMStoll/Python/Output/Ocean569_Output/SIO_Output/'
 
 # convert year, month, day columns to single DATE column
 sal_data['DATE'] = pd.to_datetime(sal_data[['YEAR', 'MONTH', 'DAY']])
@@ -83,8 +83,31 @@ fs = 1 # sampling frequency, once per day
 fc = 1/500 # cut-off frequency of the filter (cut off periods shorter than 500 days)
 w = fc / (fs / 2) #normalize the frequency
 b, a = signal.butter(4, w, 'low')
-temp_output = signal.filtfilt(b, a, temp_data['SURF_TEMP_C_DETREND'])
-sal_output = signal.filtfilt(b, a, sal_data['SURF_SAL_PSU_DETREND'])
+temp_output = signal.filtfilt(b, a, temp_tri)
+sal_output = signal.filtfilt(b, a, sal_tri)
+
+t_color = 'cadetblue'
+s_color = 'darkslateblue'
+
+NR = 2; NC = 1
+fig, axes = plt.subplots(nrows = NR,ncols=NC,figsize = (10,6))
+# subplot 1, temperature and ENSO
+axes[0].set_xlabel('Date')
+axes[0].set_ylabel('Temperature Anomaly ($^\circ$C)')
+axes[0].set_title('Temperature Anomalies, Butterworth filter cutoff = 500 days')
+axes[0].plot(temp_data['DATE'],temp_output, color = t_color, linewidth = 2, label='Temp')
+axes[0].set_ylabel('Temperature Anomaly ($^\circ$C)')
+# plt.legend(loc = 'lower left')
+# subplot 2, salinity and ENSO
+axes[1].set_xlabel('Date')
+axes[1].set_title('Salinity Anomalies, Butterworth filter cutoff = 500 days')
+axes[1].plot(sal_data['DATE'],sal_output, color = s_color, linewidth = 2, label='Salinity')
+axes[1].set_ylabel('Salinity Anomaly (PSU)')
+# plt.legend(loc = 'lower left')
+fig.tight_layout(pad=2.0)
+im_name = 'TempSalAnomalies_NoSsn.jpg'
+plt.savefig(path_out + im_name)
+plt.show()
 
 NR = 2; NC = 1
 fig, axes = plt.subplots(nrows = NR,ncols=NC,figsize = (10,6))
@@ -111,9 +134,6 @@ ax2.plot(sal_data['DATE'],sal_output, color = 'black', linewidth = 2, label='Sal
 ax2.set_ylabel('Salinity Anomaly (PSU)')
 plt.legend(loc = 'lower left')
 fig.tight_layout(pad=2.0)
-plt.show()
-
-plt.figure()
-plt.plot(ENSO_data_all['DATE'], ENSO_data_all['VALUE'], color = 'red')
-plt.plot(precip_data['Date'], precip_data['PRCP'], color = 'blue')
+im_name = 'ENSO_TempSalAnomalies.jpg'
+plt.savefig(path_out + im_name)
 plt.show()

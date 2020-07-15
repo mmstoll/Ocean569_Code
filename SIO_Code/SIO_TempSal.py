@@ -1,6 +1,6 @@
 """
 
-Data: Temeprature and Salinity time series from SIO Scripps Pier
+Data: Temperature and Salinity time series from SIO Scripps Pier
 	Salinity: measured in PSU at the surface (~0.5m) and at depth (~5m)
 	Temp: measured in degrees C at the surface (~0.5m) and at depth (~5m)
 - Timestamp included beginning in 1990
@@ -12,7 +12,10 @@ import sys,os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import datetime 
+import datetime
+import SIO_modules as SIO_mod
+from importlib import reload
+reload(SIO_mod)
 
 # read in temp and sal files
 sal_data = pd.read_csv('/Users/MMStoll/Python/Data/Ocean569_Data/SIO_Data/SIO_SALT_1916-201905.txt', sep='\t', skiprows = 27)
@@ -53,17 +56,25 @@ temp_fit_value = temp_fit_fn(temp_data.index)
 sal_data['SURF_SAL_PSU_DETREND'] = sal_data['SURF_SAL_PSU_NOAVG'] - sal_fit_value
 temp_data['SURF_TEMP_C_DETREND'] = temp_data['SURF_TEMP_C_NOAVG'] - temp_fit_value
 
+sal_tri = sal_data['SURF_SAL_PSU_DETREND'].rolling(center = True, window = 30, min_periods = 3, win_type = 'triang').mean()
+temp_tri = temp_data['SURF_TEMP_C_DETREND'].rolling(center = True, window = 60, min_periods = 3, win_type = 'triang').mean()
+
+t_color = 'cadetblue'
+s_color = 'darkslateblue'
+p_color = 'seagreen'
+e_color = 'steelblue'
+
 # plot the time series, no average
 tstr = 'SIO Temperature and Salinity Time Series'
 im_name = 'SIO_TempSal_TimeSeries.jpg'
 NR = 2; NC = 1
 fig, axes = plt.subplots(nrows = NR,ncols=NC,figsize = (10,6))
-axes[0].plot(temp_data['DATE'],temp_data['SURF_TEMP_C_NOAVG'], color='mediumaquamarine', alpha = 0.5)
-axes[0].plot(temp_data['DATE'],temp_fit_fn(temp_data.index), color = 'mediumaquamarine', linewidth = 3)
+axes[0].plot(temp_data['DATE'],temp_data['SURF_TEMP_C_NOAVG'], color=t_color, alpha = 0.5)
+axes[0].plot(temp_data['DATE'],temp_fit_fn(temp_data.index), color = t_color, linewidth = 3)
 axes[0].set_xlabel('Date')
 axes[0].set_ylabel('Temperature ($^\circ$C)')
-axes[1].plot(sal_data['DATE'],sal_data['SURF_SAL_PSU_NOAVG'], color='cornflowerblue', alpha = 0.5)
-axes[1].plot(sal_data['DATE'],sal_fit_fn(sal_data.index), color = 'cornflowerblue', linewidth = 3)
+axes[1].plot(sal_data['DATE'],sal_data['SURF_SAL_PSU_NOAVG'], color=s_color, alpha = 0.5)
+axes[1].plot(sal_data['DATE'],sal_fit_fn(sal_data.index), color =s_color, linewidth = 3)
 axes[1].set_xlabel('Date')
 axes[1].set_ylabel('Salinity (PSU)')
 fig.suptitle(tstr)
@@ -75,10 +86,10 @@ tstr = 'SIO Temperature and Salinity Time Series Anomalies'
 im_name = 'SIO_TempSal_TimeSeries_Anomalies.jpg'
 NR = 2; NC = 1
 fig, axes = plt.subplots(nrows = NR,ncols=NC,figsize = (10,6))
-axes[0].plot(temp_data['DATE'],temp_data['SURF_TEMP_C_DETREND'], color='mediumaquamarine')
+axes[0].plot(temp_data['DATE'],temp_data['SURF_TEMP_C_DETREND'], color=t_color)
 axes[0].set_xlabel('Date')
 axes[0].set_ylabel('Temperature Anomaly ($^\circ$C)')
-axes[1].plot(sal_data['DATE'],sal_data['SURF_SAL_PSU_DETREND'], color='cornflowerblue')
+axes[1].plot(sal_data['DATE'],sal_data['SURF_SAL_PSU_DETREND'], color=s_color)
 axes[1].set_xlabel('Date')
 axes[1].set_ylabel('Salinity Anomaly (PSU)')
 fig.suptitle(tstr)
@@ -130,7 +141,7 @@ tstr = 'SIO Temperature and Salinity Power Spectra'
 im_name = 'SIO_TempSal_Spectra.jpg'
 NR = 2; NC = 1
 fig, axes = plt.subplots(nrows = NR,ncols=NC,figsize = (10,6))
-axes[0].loglog(tt_freq,tt_spec_amp, color='mediumaquamarine')
+axes[0].loglog(tt_freq,tt_spec_amp, color=t_color)
 axes[0].plot([tt_freq_nyquist,tt_freq_nyquist], [10**-8,10**6],'--k', alpha = 0.5)
 axes[0].text(10**0.16,10**4,'$\omega_{max}$', alpha = 0.5)
 axes[0].plot([tt_freq_T,tt_freq_T], [10**-8,10**6], '--k', alpha = 0.5)
@@ -139,7 +150,7 @@ axes[0].plot([freq_ann,freq_ann], [10**-8,10**6],'--k', alpha = 0.5)
 axes[0].set_ylim(10**-7, 10**5)
 axes[0].set_xlabel('$\omega$ (radians/day)')
 axes[0].set_ylabel('Energy Density \n($^\circ$C$^2$)/(radians/day)')
-axes[1].loglog(ss_freq,ss_spec_amp, color='cornflowerblue')
+axes[1].loglog(ss_freq,ss_spec_amp, color=s_color)
 axes[1].plot([ss_freq_nyquist,ss_freq_nyquist], [10**-10,10**2], '--k', alpha = 0.5)
 axes[1].text(10**0.16,10**1,'$\omega_{max}$', alpha = 0.5)
 axes[1].plot([ss_freq_T,ss_freq_T], [10**-10,10**2], '--k', alpha = 0.5)
@@ -163,13 +174,13 @@ tstr = 'SIO Temperature Boxcar and Triangle Filters'
 im_name = 'SIO_TempTime_Filters.jpg'
 NR = 2; NC = 1
 fig, axes = plt.subplots(nrows = NR,ncols=NC,figsize = (10,6))
-axes[0].plot(temp_data['DATE'],temp_data['SURF_TEMP_C_DETREND'], color = 'mediumaquamarine', alpha = 0.5)
-axes[0].plot(temp_data['DATE'],temp_ma, color='mediumaquamarine', linewidth = 1, label = 'Boxcar Interval = 30 days')
+axes[0].plot(temp_data['DATE'],temp_data['SURF_TEMP_C_DETREND'], color = t_color, alpha = 0.5)
+axes[0].plot(temp_data['DATE'],temp_ma, color=t_color, linewidth = 1, label = 'Boxcar Interval = 30 days')
 axes[0].set_xlabel('Date')
 axes[0].set_ylabel('Temperature ($^\circ$C)')
 axes[0].legend(loc='lower left')
-axes[1].plot(temp_data['DATE'],temp_data['SURF_TEMP_C_DETREND'], color = 'mediumaquamarine', alpha = 0.5)
-axes[1].plot(temp_data['DATE'],temp_tri, color='mediumaquamarine', linewidth = 1, label = 'Triangle Interval = 30 days')
+axes[1].plot(temp_data['DATE'],temp_data['SURF_TEMP_C_DETREND'], color = t_color, alpha = 0.5)
+axes[1].plot(temp_data['DATE'],temp_tri, color=t_color, linewidth = 1, label = 'Triangle Interval = 30 days')
 axes[1].set_xlabel('Date')
 axes[1].set_ylabel('Temperature ($^\circ$C)')
 axes[1].legend(loc='lower left')
@@ -178,17 +189,17 @@ plt.savefig(path_out + im_name)
 plt.show()
 
 # plot the salinity time series, running mean and triangle filters
-tstr = 'SIO Salinity Boxcar and Triangle Filters'
+tstr = 'Scripps Pier Triangle Filtered Data'
 im_name = 'SIO_SalTime_Filters.jpg'
 NR = 2; NC = 1
 fig, axes = plt.subplots(nrows = NR,ncols=NC,figsize = (10,6))
-axes[0].plot(sal_data['DATE'],sal_data['SURF_SAL_PSU_DETREND'], color = 'cornflowerblue', alpha = 0.5)
-axes[0].plot(sal_data['DATE'],sal_ma, color='cornflowerblue', linewidth = 1, label = 'Boxcar Interval = 30 days')
+axes[0].plot(temp_data['DATE'],temp_data['SURF_TEMP_C_DETREND'], color = t_color, alpha = 0.5)
+axes[0].plot(temp_data['DATE'],temp_tri, color=t_color, linewidth = 1, label = 'Triangle Interval = 10 days')
 axes[0].set_xlabel('Date')
-axes[0].set_ylabel('Salinity (PSU)')
+axes[0].set_ylabel('Temperature ($^\circ$C)')
 axes[0].legend(loc='lower left')
-axes[1].plot(sal_data['DATE'],sal_data['SURF_SAL_PSU_DETREND'], color = 'cornflowerblue', alpha = 0.5)
-axes[1].plot(sal_data['DATE'],sal_tri, color='cornflowerblue', linewidth = 1, label = 'Triangle Interval = 30 days')
+axes[1].plot(sal_data['DATE'],sal_data['SURF_SAL_PSU_DETREND'], color = s_color, alpha = 0.5)
+axes[1].plot(sal_data['DATE'],sal_tri, color=s_color, linewidth = 1, label = 'Triangle Interval = 10 days')
 axes[1].set_xlabel('Date')
 axes[1].set_ylabel('Salinity (PSU)')
 axes[1].legend(loc='lower left')
@@ -249,17 +260,41 @@ tstr = 'SIO Temperature and Salinity Coherence and Phase'
 im_name = 'SIO_TempSal_CoherencePhase.jpg'
 NR = 2; NC = 1
 fig, axes = plt.subplots(nrows = NR,ncols=NC,figsize = (10,6))
-axes[0].semilogx(freq_av,coh_sq, color = 'mediumaquamarine')
+axes[0].semilogx(freq_av,coh_sq, color = 'black')
 axes[0].set_xlabel('$\omega$ (radians/day)')
 axes[0].set_ylabel('Squared Coherence $\it{T}$-$\it{S}$')
 # axes[0].grid()
-axes[1].semilogx(freq_av, cospec_phase, color = 'mediumaquamarine')
+axes[1].semilogx(freq_av, cospec_phase, color = 'black')
 axes[1].set_xlabel('$\omega$ (radians/day)')
 axes[1].set_ylabel('Phase $\it{T}$-$\it{S}$, degrees')
 fig.suptitle(tstr)
 plt.savefig(path_out + im_name)
 plt.show()
 
+n_av = 30
+# plot the coherence and phase between salinity and temperature after smoothing 
+t_freq,t_spec,t_spec_amp,t_fft,t_delt,t_freq_T,t_freq_nyquist = SIO_mod.var_fft(temp_tri)
+s_freq,s_spec,s_spec_amp,s_fft,s_delt,s_freq_T,s_freq_nyquist = SIO_mod.var_fft(sal_tri)
+s_spec_b,s_phase_b,s_freq_av_b,count=band_average(s_fft,s_fft,s_freq,n_av)
+t_spec_b,t_phase_b,t_freq_av_b,count=band_average(t_fft,t_fft,t_freq,n_av)
+s_fft_star = np.conj(s_fft)
+cospec_amp2,cospec_phase2,freq_av2,count2=band_average(t_fft,s_fft_star,t_freq,n_av)
+coh_sq2=cospec_amp2**2/(t_spec_b*s_spec_b)
 
+# plot the coherence and phase between salinity and temperature
+tstr = 'SIO Temperature and Salinity Coherence and Phase'
+im_name = 'SIO_TempSal_CoherencePhase_små.jpg'
+NR = 2; NC = 1
+fig, axes = plt.subplots(nrows = NR,ncols=NC,figsize = (10,6))
+axes[0].semilogx(freq_av2,coh_sq2, color = 'r')
+axes[0].set_xlabel('$\omega$ (radians/day)')
+axes[0].set_ylabel('Squared Coherence $\it{T}$-$\it{S}$')
+# axes[0].grid()
+axes[1].semilogx(freq_av2, cospec_phase2, color = 'r')
+axes[1].set_xlabel('$\omega$ (radians/day)')
+axes[1].set_ylabel('Phase $\it{T}$-$\it{S}$, degrees')
+fig.suptitle(tstr)
+plt.savefig(path_out + im_name)
+plt.show()
 
 

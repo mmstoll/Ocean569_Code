@@ -23,12 +23,12 @@ def import_data(file_name):
 # main program
 #
 # define the input and output files
-path_in='/Users/MMStoll/Documents/Python/Data/Ocean569_Data/MaunaLoa_Data/MaunaLoa.nc'
-path_out1='/Users/MMStoll/Documents/Python/Output/Ocean569_Output/MaunaLoa_Output/MaunaLoaPlots/MaunaLoa_time.plot.jpg'
-path_out2='/Users/MMStoll/Documents/Python/Output/Ocean569_Output/MaunaLoa_Output/MaunaLoaPlots/MaunaLoa_time_nomean.plot.jpg'
-path_out3='/Users/MMStoll/Documents/Python/Output/Ocean569_Output/MaunaLoa_Output/MaunaLoaPlots/MaunaLoa_time_detrend.plot.jpg'
-path_out4='/Users/MMStoll/Documents/Python/Output/Ocean569_Output/MaunaLoa_Output/MaunaLoaPlots/MaunaLoa_freq_nomean.plot.jpg'
-path_out5='/Users/MMStoll/Documents/Python/Output/Ocean569_Output/MaunaLoa_Output/MaunaLoaPlots/MaunaLoa_freq_detrend.plot.jpg'
+path_in='/Users/MMStoll/Python/Data/Ocean569_Data/MaunaLoa_Data/MaunaLoa.nc'
+path_out1='/Users/MMStoll/Python/Output/Ocean569_Output/MaunaLoa_Output/MaunaLoaPlots_Output/MaunaLoa_time.plot.jpg'
+path_out2='/Users/MMStoll/Python/Output/Ocean569_Output/MaunaLoa_Output/MaunaLoaPlots_Output/MaunaLoa_time_nomean.plot.jpg'
+path_out3='/Users/MMStoll/Python/Output/Ocean569_Output/MaunaLoa_Output/MaunaLoaPlots_Output/MaunaLoa_time_detrend.plot.jpg'
+path_out4='/Users/MMStoll/Python/Output/Ocean569_Output/MaunaLoa_Output/MaunaLoaPlots_Output/MaunaLoa_freq_nomean.plot.jpg'
+path_out5='/Users/MMStoll/Python/Output/Ocean569_Output/MaunaLoa_Output/MaunaLoaPlots_Output/MaunaLoa_freq_detrend.plot.jpg'
 #path_out2='/Users/MMStoll/Documents/Python/Ocean569/HOTexample/HOT_fourier.amplitudes.jpg'
 #path_out3='/Users/MMStoll/Documents/Python/Ocean569/HOTexample/full_averaged_spectra.jpg'
 

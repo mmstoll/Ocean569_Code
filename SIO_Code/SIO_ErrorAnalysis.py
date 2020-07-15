@@ -15,6 +15,9 @@ import matplotlib.pyplot as plt
 import datetime 
 from scipy import signal
 import scipy.stats as ss
+import SIO_modules as SIO_mod
+from importlib import reload
+reload(SIO_mod)
 
 # read in temp and sal files
 sal_data = pd.read_csv('/Users/MMStoll/Python/Data/Ocean569_Data/SIO_Data/SIO_SALT_1916-201905.txt', sep='\t', skiprows = 27)
@@ -23,8 +26,7 @@ ENSO_data = pd.read_excel('/Users/MMStoll/Python/Data/Ocean569_Data/SIO_Data/NOA
 ENSO_data_recent = pd.read_excel('/Users/MMStoll/Python/Data/Ocean569_Data/SIO_Data/NOAA_ENSO_recent_data.xlsx')
 precip_data = pd.read_csv('/Users/MMStoll/Python/Data/Ocean569_Data/SIO_Data/NOAA_Precip_data.csv')
 PDO_data = pd.read_csv('/Users/MMStoll/Python/Data/Ocean569_Data/SIO_Data/NOAA_PDO_data.csv', skiprows = 1)
-
-# path_out = '/Users/MMStoll/Python/Output/Ocean569_Output/SIO_Output/'
+path_out = '/Users/MMStoll/Python/Output/Ocean569_Output/SIO_Output/'
 
 # convert year, month, day columns to single DATE column
 sal_data['DATE'] = pd.to_datetime(sal_data[['YEAR', 'MONTH', 'DAY']])
@@ -71,157 +73,90 @@ b, a = signal.butter(4, w, 'low')
 temp_output = signal.filtfilt(b, a, temp_data['SURF_TEMP_C_DETREND'])
 sal_output = signal.filtfilt(b, a, sal_data['SURF_SAL_PSU_DETREND'])
 
-# create variables to carry out spectral analysis (SIO temp, SIO sal, PDO, ENSO)
-def var_fft(j):
-	data_sets = [temp_data['SURF_TEMP_C_DETREND'], sal_data['SURF_SAL_PSU_DETREND'], PDO_data['Value'][744:], ENSO_data_all['VALUE']]
-	ll = len(data_sets[j])
-	if j <= 1:
-		delt = 1
-	if j > 1:
-		delt = 30
-	data_fft = data_sets[j]
-
-	ll_half = int(ll/2+1)
-	freq = np.zeros(ll_half)
-	T_length = ll
-	freq_nyquist = np.pi/delt
-	freq_T = 2.*np.pi/(ll*delt)
-
-	omega0 = 2.*np.pi/(T_length*delt)
-	for i in range(0,ll_half):
-		freq[i] = i*omega0
-
-	fft = np.fft.rfft(data_fft,n=ll)
-	fourier_amp = np.sqrt((np.real(fft)**2+np.imag(fft)**2))
-	fourier_phase = 180.*np.arctan2(np.imag(fft),np.real(fft))/np.pi
-	spec = np.real(fft*np.conj(fft))/(2.*np.pi*T_length*delt)
-	spec_amp  = (np.absolute(fft))**2/(2*np.pi*T_length*delt)
-
-	return(freq,spec,spec_amp,delt,freq_T,freq_nyquist)
-
-# dictionaries to define legend names, colors, and labels
-legend_name = ['Temp', 'Sal', 'PDO', 'ENSO']
-color_sets = ['mediumaquamarine','cornflowerblue','green','blue']
-spectra_label = ['($^\circ$C$^2$)/(cycles/day)', '(PSU$^2$)/(cycles/day)','(PDO Index$^2$)/(cycles/month)','(ENSO Index$^2$)/(cycles/month)']
-title_label = ['Power Spectrum SIO Temeprature', 'Power Spectrum SIO Salinity', 'Power Spectrum PDO Index','Power Spectrum ENSO Index']
-x_lab = ['Day', 'Day', 'Month', 'Month']
-
 # create dataframe with spectra for each variable
-spectra_temp_df = pd.DataFrame(columns = ['Temp_freq', 'Temp_spec'])
-spectra_sal_df = pd.DataFrame(columns = ['Sal_freq', 'Sal_spec'])
-spectra_PDO_df = pd.DataFrame(columns = ['PDO_freq', 'PDO_spec'])
-spectra_ENSO_df = pd.DataFrame(columns = ['ENSO_freq', 'ENSO_spec'])
+spectra_temp_df = pd.DataFrame(columns = ['Temp_freq', 'Temp_spec', 'Temp_fft'])
+spectra_sal_df = pd.DataFrame(columns = ['Sal_freq', 'Sal_spec', 'Sal_fft'])
+spectra_PDO_df = pd.DataFrame(columns = ['PDO_freq', 'PDO_spec', 'PDO_fft'])
+spectra_ENSO_df = pd.DataFrame(columns = ['ENSO_freq', 'ENSO_spec', 'ENSO_fft'])
+spectra_tb_df = pd.DataFrame(columns = ['tb_freq', 'tb_spec', 'tb_fft'])
 
-for j in range(0,4):
-	freq, spec, spec_amp, delt, freq_T, freq_nyquist = var_fft(j)
+temp_sampled = np.mean(temp_output[0:37530].reshape(-1, 30), axis=1) #length = 1251
+# compute spectral variables for each variable
+for j in range(0,5):
+	data_sets = [temp_data['SURF_TEMP_C_DETREND'], sal_data['SURF_SAL_PSU_DETREND'], PDO_data['Value'][744:], ENSO_data_all['VALUE'], temp_sampled]
+	freq, spec, spec_amp, fft, delt, freq_T, freq_nyquist = SIO_mod.var_fft(data_sets[j])
 	if j == 0:
 		spectra_temp_df['Temp_freq'] = freq
 		spectra_temp_df['Temp_spec'] = spec
+		spectra_temp_df['Temp_fft'] = fft
 	if j == 1:
 		spectra_sal_df['Sal_freq'] = freq
 		spectra_sal_df['Sal_spec'] = spec
+		spectra_sal_df['Sal_fft'] = fft
 	if j == 2:
 		spectra_PDO_df['PDO_freq'] = freq
 		spectra_PDO_df['PDO_spec'] = spec
+		spectra_PDO_df['PDO_fft'] = fft
 	if j == 3:
 		spectra_ENSO_df['ENSO_freq'] = freq
 		spectra_ENSO_df['ENSO_spec'] = spec
-
+		spectra_ENSO_df['ENSO_fft'] = fft
+	if j == 4:
+		spectra_tb_df['tb_freq'] = freq
+		spectra_tb_df['tb_spec'] = spec
+		spectra_tb_df['tb_fft'] = fft
 # find confidence intervals
-spec_set = [spectra_temp_df['Temp_spec'], spectra_sal_df['Sal_spec'], spectra_PDO_df['PDO_spec'], spectra_ENSO_df['ENSO_spec']]
-freq_set = [spectra_temp_df['Temp_freq'], spectra_sal_df['Sal_freq'], spectra_PDO_df['PDO_freq'], spectra_ENSO_df['ENSO_freq']]
-
-conf_temp_l = np.zeros(len(spec_set[0]))
-conf_temp_h = np.zeros(len(spec_set[0]))
-conf_sal_l = np.zeros(len(spec_set[1]))
-conf_sal_h = np.zeros(len(spec_set[1]))
-conf_PDO_l = np.zeros(len(spec_set[2]))
-conf_PDO_h = np.zeros(len(spec_set[2]))
-conf_ENSO_l = np.zeros(len(spec_set[3]))
-conf_ENSO_h = np.zeros(len(spec_set[3]))
+spec_set = [spectra_temp_df['Temp_spec'], spectra_sal_df['Sal_spec'], spectra_PDO_df['PDO_spec'], spectra_ENSO_df['ENSO_spec'], spectra_tb_df['tb_spec']]
+freq_set = [spectra_temp_df['Temp_freq'], spectra_sal_df['Sal_freq'], spectra_PDO_df['PDO_freq'], spectra_ENSO_df['ENSO_freq'], spectra_tb_df['tb_freq']]
 
 df = 2
-for j in range (0,4):
-	if j == 0:
-		for i in range(0,len(spec_set[j])):
-			conf_temp_l[i] = spec_set[j][i] * df / ss.chi2.ppf([0.975], df)
-			conf_temp_h[i] = spec_set[j][i] * df / ss.chi2.ppf([0.025], df)
-	if j == 1:
-		for i in range(0,len(spec_set[j])):
-			conf_sal_l[i] = spec_set[j][i] * df / ss.chi2.ppf([0.975], df)
-			conf_sal_h[i] = spec_set[j][i] * df / ss.chi2.ppf([0.025], df)
-	if j == 2:
-		for i in range(0,len(spec_set[j])):	
-			conf_PDO_l[i] = spec_set[j][i] * df / ss.chi2.ppf([0.975], df)
-			conf_PDO_h[i] = spec_set[j][i] * df / ss.chi2.ppf([0.025], df)
-	if j == 3:
+conf_lim = 0.95
+conf_temp_l, conf_temp_h = SIO_mod.conf_int(spec_set[0], conf_lim, df)
+conf_sal_l, conf_sal_h = SIO_mod.conf_int(spec_set[1], conf_lim, df)
+conf_PDO_l, conf_PDO_h = SIO_mod.conf_int(spec_set[2], conf_lim, df)
+conf_ENSO_l, conf_ENSO_h = SIO_mod.conf_int(spec_set[3], conf_lim, df) 
+conf_tb_l, conf_tb_h = SIO_mod.conf_int(spec_set[4], conf_lim, 60) 
 
-		for i in range(0,len(spec_set[j])):
-			conf_ENSO_l[i] = spec_set[j][i] * df / ss.chi2.ppf([0.975], df)
-			conf_ENSO_h[i] = spec_set[j][i] * df / ss.chi2.ppf([0.025], df)
+conf_l_set = [conf_temp_l, conf_sal_l, conf_PDO_l, conf_ENSO_l, conf_tb_l]
+conf_h_set = [conf_temp_h, conf_sal_h, conf_PDO_h, conf_ENSO_h, conf_tb_h]
 
-conf_l_set = [conf_temp_l, conf_sal_l, conf_PDO_l, conf_ENSO_l]
-conf_h_set = [conf_temp_h, conf_sal_h, conf_PDO_h, conf_ENSO_h]
+# color specifications
+t_color = 'cadetblue'
+s_color = 'darkslateblue'
+p_color = 'seagreen'
+e_color = 'steelblue'
 
-for j in range(0,4):
+# dictionaries to define legend names, colors, and labels
+legend_name = ['Temp', 'Sal', 'PDO', 'ENSO', 'Band Averaged Temp']
+color_sets = [t_color, s_color, p_color, e_color, t_color]
+spectra_label = ['($^\circ$C$^2$)/(cycles/day)', '(PSU$^2$)/(cycles/day)','(PDO Index$^2$)/(cycles/day)','(ENSO Index$^2$)/(cycles/day)', '($^\circ$C$^2$)/(cycles/day)']
+title_label = ['Power Spectrum SIO Temperature', 'Power Spectrum SIO Salinity', 'Power Spectrum PDO Index','Power Spectrum ENSO Index', 'Power Spectrum SIO Temeprature, Band Av = 30']
+x_lab = ['Day', 'Day', 'Day', 'Day', 'Day']
+freq_ann = 2*np.pi/365.25
+
+# plot spectra for each variable with confidence intervals
+for j in range(0,5):
+	freq, spec, spec_amp, fft, delt, freq_T, freq_nyquist = SIO_mod.var_fft(data_sets[j])
 	fig = plt.figure(figsize = (10,6))
 	ax = fig.add_subplot(111)
-	ax.loglog(freq_set[j], spec_set[j], label = legend_name[j], color = color_sets[j])
-	ax.fill_between(freq_set[j], conf_l_set[j], conf_h_set[j] , color = 'k', alpha = 0.2)
+	ax.loglog(freq_set[j], spec_set[j], color = color_sets[j])
+	ax.fill_between(freq_set[j], conf_l_set[j], conf_h_set[j] , color = 'k', label = 'Conf. Lim. = ' + str(conf_lim), alpha = 0.2)
 	ax.set_title(title_label[j])
 	ax.set_ylabel('Energy Density \n' + spectra_label[j])
+	ax.axvline(freq_nyquist, color = 'black', linestyle = '--', alpha = 0.5)
+	ax.text(0.9, 0.9,'$\omega_{max}$', alpha = 0.5, transform = ax.transAxes)
+	ax.axvline(freq_T, color = 'black', linestyle = '--', alpha = 0.5)
+	ax.text(0.05, 0.9,'$\omega_o$', alpha = 0.5, transform = ax.transAxes)
+	ax.axvline(freq_ann, color = 'black', linestyle = '--', alpha = 0.5)
+	ax.legend(loc = 'lower left')
+	if j <=1:
+		ax.text(0.5, 0.9, 'Annual', alpha = 0.5, transform = ax.transAxes)
+	if j >1:
+		ax.text(0.72, 0.9, 'Annual', alpha = 0.5, transform = ax.transAxes)
 	ax.set_xlabel('Cycles per ' + x_lab[j])
 	if j <= 1:
 		ax.set_ylim(10**-8, 10**5)
+	im_name = title_label[j] + '.jpg'
+	plt.savefig(path_out + im_name)
 	plt.show()
 
-# specific for temperature
-freq,spec,spec_amp,delt,freq_T,freq_nyquist = var_fft(0)
-
-# conf = np.zeros(len(spec))
-nn = len(spec)
-xx=np.zeros(nn)
-yy_lower0=np.zeros(nn)
-yy_upper0=np.zeros(nn)
-frac=0.1
-
-for i in range(0,nn-2):
-    ii=frac*(i+2)
-    nu=ii
-    d_mean=nu
-    conf_lim=0.95
-    xx[i]=ii
-    conf_above=(1.-conf_lim)/2
-    conf_below=1.-(1.-conf_lim)/2.
-    mark_rt = ss.chi2.ppf(conf_below,nu)
-    mark_lf = ss.chi2.ppf(conf_above,nu)
-    yy_upper_nolog=mark_rt
-    yy_lower_nolog=mark_lf
-    yy_upper0[i]=(yy_upper_nolog-d_mean)/d_mean
-    yy_lower0[i]=(d_mean-yy_lower_nolog)/d_mean
-ind_set=nn-2
-xx=xx[0:ind_set]
-yy_lower1=yy_lower0[0:ind_set]
-yy_upper1=yy_upper0[0:ind_set]
-
-fig = plt.figure()
-plt.plot(xx,yy_upper1)
-plt.plot(xx, -yy_lower1)
-plt.show()
-
-# df = 10
-# conf_lim = 0.95
-# conf_above = (1.-conf_lim)/2
-# conf_below = 1.-(1.-conf_lim)/2
-# mark_rt = stats.chi2.ppf(conf_below,df)
-# mark_lf = stats.chi2.ppf(conf_above,df)
-# yy_upper_nolog = mark_rt
-# yy_lower_nolog = mark_lf
-# yy_upper0[i] = (yy_upper_nolog - df)/df
-# yy_lower0[i] = (df - yy_lower_nolog)/df
-
-# fig = plt.figure()
-# plt.loglog(tt_freq,conf, color = 'k')
-# plt.loglog(tt_freq, conf_l, color = 'blue')
-# plt.loglog(tt_freq, conf_h, color = 'red')
-# plt.show()

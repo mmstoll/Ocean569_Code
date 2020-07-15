@@ -6,7 +6,6 @@ Data: Temeprature and Salinity time series from SIO Scripps Pier
 - Timestamp included beginning in 1990
 
 """
-
 # imports
 import sys,os
 import pandas as pd

@@ -1,6 +1,6 @@
 """
 
-Data: Temeprature and Salinity time series from SIO Scripps Pier
+Data: Temperature and Salinity time series from SIO Scripps Pier
 	Salinity: measured in PSU at the surface (~0.5m) and at depth (~5m)
 	Temp: measured in degrees C at the surface (~0.5m) and at depth (~5m)
 - Timestamp included beginning in 1990
@@ -61,6 +61,16 @@ sal_ma = sal_data['SURF_SAL_PSU_DETREND'].rolling(center = True, window = 30, mi
 sal_tri = sal_data['SURF_SAL_PSU_DETREND'].rolling(center = True, window = 30, min_periods = 3, win_type = 'triang').mean()
 temp_ma = temp_data['SURF_TEMP_C_DETREND'].rolling(center = True, window = 30, min_periods = 3, win_type = 'boxcar').mean()
 temp_tri = temp_data['SURF_TEMP_C_DETREND'].rolling(center = True, window = 60, min_periods = 3, win_type = 'triang').mean()
+PDO_ma = PDO_data['Value'][744:].rolling(center = True, window = 5, min_periods = 3, win_type = 'boxcar').mean()
+PDO_ma2 = PDO_data['Value'][744:].rolling(center = True, window = 60, min_periods = 3).mean()
+
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+# ax.plot(PDO_data['Date'][744:], PDO_data['Value'][744:], color = 'black', alpha = 0.5)
+# ax.plot(PDO_data['Date'][744:], PDO_ma, color = 'black')
+ax.plot(PDO_data['Date'][744:], PDO_ma2, color = 'red')
+plt.show()
 
 # remove seasonal temp
 x = np.linspace(0,37538,37538)
@@ -68,34 +78,34 @@ y = 5*np.sin((2*np.pi/365)*x+(0.4005*365))
 temp_data['SURF_TEMP_C_NOSSN'] = temp_tri - y
 
 # plot temperature with PDO
-tstr = 'Temperature Anomaly and PDO Index'
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.plot(temp_data['DATE'], temp_data['SURF_TEMP_C_DETREND'], color = 'black', alpha = 0.5)
-ax.set_ylabel('Temperature Anomaly ($^\circ$C)')
-ax.set_xlabel('Date')
-ax2 = ax.twinx()
-ax2.fill_between(PDO_data['DATE'][744:], PDO_data['Value'][744:], where=(PDO_data['Value'][744:]>0), color = 'r')
-ax2.fill_between(PDO_data['DATE'][744:], PDO_data['Value'][744:], where=(PDO_data['Value'][744:]<0), color = 'b')
-ax2.set_ylabel('PDO Index')
-ax.set_title(tstr)
-plt.show()
+# tstr = 'Temperature Anomaly and PDO Index'
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# ax.plot(temp_data['DATE'], temp_data['SURF_TEMP_C_DETREND'], color = 'black', alpha = 0.5)
+# ax.set_ylabel('Temperature Anomaly ($^\circ$C)')
+# ax.set_xlabel('Date')
+# ax2 = ax.twinx()
+# ax2.fill_between(PDO_data['DATE'][744:], PDO_data['Value'][744:], where=(PDO_data['Value'][744:]>0), color = 'r')
+# ax2.fill_between(PDO_data['DATE'][744:], PDO_data['Value'][744:], where=(PDO_data['Value'][744:]<0), color = 'b')
+# ax2.set_ylabel('PDO Index')
+# ax.set_title(tstr)
+# plt.show()
 
 # plot temperature anomaly and seasonal sinusoid fit; plot the difference
-NR = 2; NC = 1
-fig, axes = plt.subplots(nrows = NR,ncols=NC,figsize = (10,6))
-axes[0].plot(temp_data['DATE'], temp_ma, color = 'magenta', label = 'Smoothed Data')
-axes[0].plot(temp_data['DATE'], y, 'orange', label = 'Seasonal Sinusoid Fit')
-axes[0].set_xlabel('Date')
-axes[0].set_ylabel('Temperature Anomaly ($^\circ$C)')
-axes[0].set_title('Temperature Anomaly and Seasonal Fit')
-axes[0].legend(loc = 'upper left')
-axes[1].plot(temp_data['DATE'], temp_data['SURF_TEMP_C_NOSSN'], color = 'green')
-axes[1].set_xlabel('Date')
-axes[1].set_ylabel('Temperature Anomaly ($^\circ$C)')
-axes[1].set_title('Temperature Anomaly, Seasons Removed')
-fig.tight_layout(pad=2.0)
-plt.show()
+# NR = 2; NC = 1
+# fig, axes = plt.subplots(nrows = NR,ncols=NC,figsize = (10,6))
+# axes[0].plot(temp_data['DATE'], temp_ma, color = 'magenta', label = 'Smoothed Data')
+# axes[0].plot(temp_data['DATE'], y, 'orange', label = 'Seasonal Sinusoid Fit')
+# axes[0].set_xlabel('Date')
+# axes[0].set_ylabel('Temperature Anomaly ($^\circ$C)')
+# axes[0].set_title('Temperature Anomaly and Seasonal Fit')
+# axes[0].legend(loc = 'upper left')
+# axes[1].plot(temp_data['DATE'], temp_data['SURF_TEMP_C_NOSSN'], color = 'green')
+# axes[1].set_xlabel('Date')
+# axes[1].set_ylabel('Temperature Anomaly ($^\circ$C)')
+# axes[1].set_title('Temperature Anomaly, Seasons Removed')
+# fig.tight_layout(pad=2.0)
+# plt.show()
 
 # butterworth low pass filter for temperature
 fs = 1 # sampling frequency, once per day
@@ -130,4 +140,7 @@ ax2.plot(sal_data['DATE'],sal_output, color = 'black', linewidth = 2, label='Sal
 ax2.set_ylabel('Salinity Anomaly (PSU)')
 plt.legend(loc = 'lower left')
 fig.tight_layout(pad=2.0)
+im_name = 'PDO_TempSalAnomalies.jpg'
+plt.savefig(path_out + im_name)
+
 plt.show()
